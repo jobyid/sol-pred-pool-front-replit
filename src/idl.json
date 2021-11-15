@@ -36,6 +36,30 @@
         {
           "name": "imageLink",
           "type": "string"
+        },
+        {
+          "name": "poolName",
+          "type": "string"
+        },
+        {
+          "name": "poolDesc",
+          "type": "string"
+        },
+        {
+          "name": "winOpt",
+          "type": "string"
+        },
+        {
+          "name": "close",
+          "type": "u32"
+        },
+        {
+          "name": "verify",
+          "type": "string"
+        },
+        {
+          "name": "fee",
+          "type": "u8"
         }
       ]
     }
@@ -48,7 +72,7 @@
         "fields": [
           {
             "name": "totalPools",
-            "type": "u64"
+            "type": "u32"
           },
           {
             "name": "poolList",
@@ -69,12 +93,66 @@
         "kind": "struct",
         "fields": [
           {
+            "name": "poolId",
+            "type": "u32"
+          },
+          {
             "name": "imageLink",
             "type": "string"
           },
           {
             "name": "userAddress",
             "type": "publicKey"
+          },
+          {
+            "name": "poolName",
+            "type": "string"
+          },
+          {
+            "name": "poolBalance",
+            "type": "u64"
+          },
+          {
+            "name": "poolDescription",
+            "type": "string"
+          },
+          {
+            "name": "winOptions",
+            "type": {
+              "vec": "string"
+            }
+          },
+          {
+            "name": "closeDateTime",
+            "type": "u32"
+          },
+          {
+            "name": "verifyUrl",
+            "type": "string"
+          },
+          {
+            "name": "ownerFee",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "EntryStruct",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "user",
+            "type": "string"
+          },
+          {
+            "name": "prediction",
+            "type": "string"
+          },
+          {
+            "name": "stakeBal",
+            "type": "u64"
           }
         ]
       }
