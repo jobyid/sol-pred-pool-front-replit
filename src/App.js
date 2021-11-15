@@ -16,7 +16,9 @@ import Navbar from 'react-bootstrap/Navbar';
 import Container from 'react-bootstrap/Container';
 import Badge from 'react-bootstrap/Badge';
 import Nav from 'react-bootstrap/Nav';
-import { Formik } from 'formik';
+import Card from 'react-bootstrap/Card';
+import Image from 'react-bootstrap/Image';
+//import { Formik } from 'formik';
 
 
 const {SystemProgram, Keypair} = web3;
@@ -49,7 +51,9 @@ const App = () => {
   const [winOptions, setWinOptions] = useState("");
   const [verifySite, setVerifySite] = useState("");
   const [ownerFee, setOwnerFee] = useState("");
-  const [detailView, setDetailView] = useState(null);
+  const [detailView, setDetailView] = useState(false);
+  const [fullscreen, setFullscreen] = useState(true);
+  const [clickedIndex, setClickedIndex] = useState(null);
 
   const checkIfWalletIsConnected = async () => {
     try {
@@ -93,6 +97,7 @@ const App = () => {
     const provider = new Provider(
       connection, window.solana, opts.preflightCommitment,
     );
+    console.log("got provider")
     return provider;
   }
 
@@ -126,8 +131,9 @@ const App = () => {
     try{
       const provider = getProvider();
       const program = new Program(idl, programID, provider);
-
-      await program.rpc.addGif(inputValue, poolQuestion,pooldesc, winOptions, 568, verifySite, ownerFee,{
+      const closeDateTime = new Date(closeDate).getTime();
+      console.log(closeDateTime)
+      await program.rpc.addGif(inputValue, poolQuestion,pooldesc, winOptions, Number(closeDateTime), verifySite, ownerFee,{
         accounts: {
           baseAccount: baseAccount.publicKey,
         },
@@ -254,6 +260,11 @@ const App = () => {
       </div>
   );
 
+  const onPoolClick = (index) =>{
+    setClickedIndex(index);
+    setDetailView(true);
+  }
+
   const getGifList = async() => {
     try {
       const provider = getProvider();
@@ -273,7 +284,7 @@ const App = () => {
       return (
         <div className="connected-container">
           <button className="cta-button submit-gif-button" onClick={createGifAccount}>
-          Do One-Time Initilisation for GIF PRgram Account 
+          Do One-Time Initilisation for GIF Program Account 
           </button>
         </div>
       )
@@ -287,13 +298,15 @@ const App = () => {
             Can you predict the outcome? If you can you'll make some money ✨
           </p>
         <div className="connected-container">
-          <button onClick={setDetailView(true)}></button>
+          {renderDetailView()}
           <div className="gif-grid">
             {gifList.map((item, index) => (
-              <div className="gif-item" key={index}>
-                <h3 className="footer-text">{item.poolName}</h3>
-                <img src={item.imageLink} alt="Pool Image" />
-              </div>
+              <a onClick={(index) => onPoolClick(item)} key={index}>
+                <div className="gif-item" >
+                  <h3 className="footer-text">{item.poolName}</h3>
+                  <img src={item.imageLink} alt="Pool Image" />
+                </div>
+              </a>
             ))}
           </div>
         </div>
@@ -302,17 +315,61 @@ const App = () => {
     };
   };
 
-  const renderDetialView = () =>{
-    return (
-      <>
-      <div className="header-container">
-          {topNavbar()}
-        </div>
-      <div className="connected-container">
-        <h1>Detials View</h1>
-      </div>
-      </>
-    )
+  const renderDetailView = () =>{
+    if (clickedIndex === null) {
+      return (
+        <>
+        
+        <Modal show={detailView} fullscreen={fullscreen} onHide={() => setDetailView(false)}>
+          <Modal.Header closeButton>
+            <Modal.Title>Modal</Modal.Title>
+          </Modal.Header>
+          <Modal.Body>Modal body content
+            {/* Selected index is {clickedIndex.poolName} */}
+          </Modal.Body>
+        </Modal>
+        </>
+      )
+    }else {
+      return (
+        <>
+        <Modal show={detailView} fullscreen={fullscreen} onHide={() => setDetailView(false)}>
+          <Modal.Header closeButton></Modal.Header>
+          <Modal.Body>
+            <Row>
+              <Col sm={8}>
+                <Card>
+                  <Card.Header>
+                    <h2>{clickedIndex.poolName}</h2>
+                  </Card.Header>
+                  <Card.Body>
+                    <Row>
+                      <Col sm={6}>
+                        <Image src={clickedIndex.imageLink} fluid rounded/>
+                        <p>{clickedIndex.poolDescription}</p>
+                      </Col>
+                      <Col>
+                        <h3>Pool Size: {clickedIndex.poolName}</h3>
+                        <h3>Close Date: {clickedIndex.closeDateTime} </h3>
+                      </Col>
+                    </Row>
+                  </Card.Body>
+                </Card>
+              </Col>
+              <Col>
+                <Card>
+                  <Card.Header>
+                    <h2>Make a prediction</h2>
+                  </Card.Header>
+                </Card>
+              </Col>
+            </Row>
+            
+          </Modal.Body>
+        </Modal>
+        </>
+      )
+    }
   }
 
   
@@ -329,18 +386,14 @@ const App = () => {
     }
   }, [walletAddress]);
 
+
   return (
     <div className="App">
       <div className={walletAddress ? "authed-container":"container"}>
-        {/* <div className="header-container">
-          
-          <p className="header">Prediction Pools</p>
-          <p className="sub-text">
-            Can you predict the outcome? If you can you'll make some money ✨
-          </p> */}
+        
           {!walletAddress && renderNotConnectedContainer()}
           {walletAddress && renderConnectedContainer()}
-          {/* {detailView && renderDetialView()} */}
+          
         {/* </div> */}
         {/* <div className="footer-container">
           <img alt="Twitter Logo" className="twitter-logo" src={twitterLogo} />
