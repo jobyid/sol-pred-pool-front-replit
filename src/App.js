@@ -18,6 +18,7 @@ import Badge from 'react-bootstrap/Badge';
 import Nav from 'react-bootstrap/Nav';
 import Card from 'react-bootstrap/Card';
 import Image from 'react-bootstrap/Image';
+import Button from 'react-bootstrap/Button';
 //import { Formik } from 'formik';
 
 
@@ -25,6 +26,7 @@ const {SystemProgram, Keypair} = web3;
 //making the key pair or resuing the one already collected 
 const arr = Object.values(kp._keypair.secretKey)
 const secret = new Uint8Array(arr)
+
 const baseAccount = web3.Keypair.fromSecretKey(secret)
 
 const programID = new PublicKey(idl.metadata.address);
@@ -50,10 +52,13 @@ const App = () => {
   const [pooldesc, setPoolDesc] = useState('');
   const [winOptions, setWinOptions] = useState("");
   const [verifySite, setVerifySite] = useState("");
-  const [ownerFee, setOwnerFee] = useState("");
+  const [ownerFee, setOwnerFee] = useState(0);
   const [detailView, setDetailView] = useState(false);
   const [fullscreen, setFullscreen] = useState(true);
   const [clickedIndex, setClickedIndex] = useState(null);
+  const [selectedWinner, setSelectedWinner] = useState(null);
+  const [stake, setStake] = useState(0);
+  
 
   const checkIfWalletIsConnected = async () => {
     try {
@@ -131,9 +136,9 @@ const App = () => {
     try{
       const provider = getProvider();
       const program = new Program(idl, programID, provider);
-      const closeDateTime = new Date(closeDate).getTime();
+      const closeDateTime = new Date(closeDate).getTime() / 1000;
       console.log(closeDateTime)
-      await program.rpc.addGif(inputValue, poolQuestion,pooldesc, winOptions, Number(closeDateTime), verifySite, ownerFee,{
+      await program.rpc.addGif(inputValue, poolQuestion,pooldesc, winOptions, closeDateTime, verifySite, ownerFee,{
         accounts: {
           baseAccount: baseAccount.publicKey,
         },
@@ -147,6 +152,30 @@ const App = () => {
     }
   };
 
+  const placeBet = async() => {
+    console.log("Placing bet...")
+    if (new Date(clickedIndex.closeDateTime * 1000) < Date.now()){
+      console.log("Pool Closed")
+      return;
+    }
+    try {
+      const provider = getProvider();
+      const program = new Program(idl, programID, provider);
+      const poolId = Number(clickedIndex.poolId);
+      //const transaction = new web3.Transaction();
+      
+      await program.rpc.placeBet(poolId,stake,walletAddress,selectedWinner, {
+        accounts: {
+          baseAccount: baseAccount.publicKey,
+        },
+      });
+      console.log("bet sent");
+      setSelectedWinner(null);
+      setStake(0);
+    }catch (error){
+      console.log("Error placing bet: ", error)
+    }
+  }
   
   const handleClose = () => setShow(false);
   const handleShow = () => setShow(true);
@@ -201,9 +230,9 @@ const App = () => {
               </Row>
               <Form.Group>
                 <Form.Label>Owner Fee:</Form.Label>
-                <Form.Select onSelect={(event) => setOwnerFee(event.target)}>
+                <Form.Select onSelect={(event) => setOwnerFee(event.target.value)}>
                   <option>Select an option</option>
-                  <option value="0">0</option>
+                  <option value='0'>0</option>
                   <option value="1">1</option>
                   <option value="2">2</option>
                   <option value="3">3</option>
@@ -269,14 +298,18 @@ const App = () => {
     try {
       const provider = getProvider();
       const program = new Program(idl, programID, provider);
-      const account = await program.account.baseAccount.fetch(baseAccount.publicKey);
+      console.log(baseAccount.publicKey)
+      const account = await program.account.baseAccount.fetch(baseAccount.publicKey); // await program.provider.connection.getAccountInfo(baseAccount.publicKey); //
       console.log("Got the account", account)
+      console.log("Pool list? ", account.poolList)
       setGifList(account.poolList)
     }catch(error){
-      console.log("Error in getGifs: ", error)
+      console.log("Error in getGifList: ", error)
       setGifList(null);
     }
   }
+
+  
 
   const renderConnectedContainer = () => {
 
@@ -315,11 +348,11 @@ const App = () => {
     };
   };
 
+  
   const renderDetailView = () =>{
     if (clickedIndex === null) {
       return (
         <>
-        
         <Modal show={detailView} fullscreen={fullscreen} onHide={() => setDetailView(false)}>
           <Modal.Header closeButton>
             <Modal.Title>Modal</Modal.Title>
@@ -349,8 +382,24 @@ const App = () => {
                         <p>{clickedIndex.poolDescription}</p>
                       </Col>
                       <Col>
-                        <h3>Pool Size: {clickedIndex.poolName}</h3>
-                        <h3>Close Date: {clickedIndex.closeDateTime} </h3>
+                        <p>Pool Balance: {clickedIndex.poolBalance.toNumber()}</p>
+                        <p>Close Date: {new Date(clickedIndex.closeDateTime * 1000).toUTCString()} </p>
+                        <p>Verfication Site: {clickedIndex.verifyUrl}</p>
+                        <p>Win Options:</p>
+                        <ul>
+                            {clickedIndex.winOptions.map((item, index) => 
+                              <li>{item}</li>
+                            )   
+                            }
+                        </ul>
+                      </Col>
+                    </Row>
+                    <Row>
+                      <Col>
+                          <p>Platfrom Fee: 2%</p>
+                      </Col>
+                      <Col>
+                          <p>Pool Owner Fee: {clickedIndex.ownerFee}%</p>
                       </Col>
                     </Row>
                   </Card.Body>
@@ -359,8 +408,29 @@ const App = () => {
               <Col>
                 <Card>
                   <Card.Header>
-                    <h2>Make a prediction</h2>
+                    <h2>Make a prediction.</h2>
                   </Card.Header>
+                  <Card.Body>
+                    <Form>
+                      <Form.Group>
+                        <Form.Label>Your Selection:</Form.Label>
+                        <Form.Select onSelect={(event) => setSelectedWinner(event.target)}>
+                          {clickedIndex.winOptions.map((item,index) =>
+                            <option value={item}>{item}</option>
+                          )}
+                        </Form.Select>
+                        <Form.Text>Pick your winner.</Form.Text>
+                      </Form.Group>
+                      <Form.Group>
+                        <Form.Label>Stake (SOL):</Form.Label>
+                        <Form.Control type='number' value={stake} onChange={(event)=>setStake(event.target.value)}></Form.Control>
+                        <Form.Text>How much you are betting in SOL.</Form.Text>
+                      </Form.Group>
+                      <Button variant="primary" onClick={placeBet}>
+                        Submit
+                      </Button>
+                    </Form>
+                  </Card.Body>
                 </Card>
               </Col>
             </Row>
