@@ -58,6 +58,7 @@ const App = () => {
   const [clickedIndex, setClickedIndex] = useState(null);
   const [selectedWinner, setSelectedWinner] = useState(null);
   const [stake, setStake] = useState(0);
+  const [result, setResult] = useState("");
   
 
   const checkIfWalletIsConnected = async () => {
@@ -153,18 +154,20 @@ const App = () => {
   };
 
   const placeBet = async() => {
+    // TODO: transfer sol in the amount they have bet from the wallet. 
     console.log("Placing bet...")
     if (new Date(clickedIndex.closeDateTime * 1000) < Date.now()){
       console.log("Pool Closed")
       return;
     }
+    console.log("Selected prediction is: ", selectedWinner)
     try {
       const provider = getProvider();
       const program = new Program(idl, programID, provider);
-      const poolId = Number(clickedIndex.poolId);
+      const poolId = clickedIndex.poolId;
       //const transaction = new web3.Transaction();
       
-      await program.rpc.placeBet(poolId,stake,walletAddress,selectedWinner, {
+      await program.rpc.placeBet(selectedWinner,poolId,stake,walletAddress, {
         accounts: {
           baseAccount: baseAccount.publicKey,
         },
@@ -172,6 +175,8 @@ const App = () => {
       console.log("bet sent");
       setSelectedWinner(null);
       setStake(0);
+      setDetailView(false);
+      await getGifList();
     }catch (error){
       console.log("Error placing bet: ", error)
     }
@@ -404,6 +409,24 @@ const App = () => {
                     </Row>
                   </Card.Body>
                 </Card>
+                <Card>
+                  <Card.Body>
+                    <Form>
+                      <Form.Group>
+                        <Form.Select onChnage={(event) => setResult(event.target.value)}>
+                          {/* // TODO: make this only appear to pool owner after it has closed.   */}
+                          <option>Please Pick one</option>
+                          {clickedIndex.winOptions.map((item,index) =>
+                            <option value={item}>{item}</option>
+                          )}
+                        </Form.Select>
+                      </Form.Group>
+                      <Form.Group>
+                        <Button>Add Result</Button>
+                      </Form.Group>
+                    </Form>
+                  </Card.Body>
+                </Card>
               </Col>
               <Col>
                 <Card>
@@ -414,7 +437,8 @@ const App = () => {
                     <Form>
                       <Form.Group>
                         <Form.Label>Your Selection:</Form.Label>
-                        <Form.Select onSelect={(event) => setSelectedWinner(event.target)}>
+                        <Form.Select onChange={(event) => setSelectedWinner(event.target.value)}>
+                          <option>Please Pick one</option>
                           {clickedIndex.winOptions.map((item,index) =>
                             <option value={item}>{item}</option>
                           )}

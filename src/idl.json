@@ -74,12 +74,12 @@
       ],
       "args": [
         {
-          "name": "poolId",
-          "type": "u32"
-        },
-        {
           "name": "result",
           "type": "string"
+        },
+        {
+          "name": "poolId",
+          "type": "u32"
         }
       ]
     },
@@ -94,6 +94,10 @@
       ],
       "args": [
         {
+          "name": "pred",
+          "type": "string"
+        },
+        {
           "name": "poolId",
           "type": "u32"
         },
@@ -103,10 +107,6 @@
         },
         {
           "name": "user",
-          "type": "string"
-        },
-        {
-          "name": "pred",
           "type": "string"
         }
       ]
