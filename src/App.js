@@ -182,6 +182,30 @@ const App = () => {
     }
   }
   
+  const addResultFunc = async() => {
+    if (new Date(clickedIndex.closeDateTime * 1000) > Date.now()){
+      console.log("Pool must be Closed to add a result")
+      return;
+    }
+    //TODO: check if the person add result it the pool owner 
+    try {
+      const provider = getProvider();
+      const program = new Program(idl, programID, provider);
+      const poolId = clickedIndex.poolId;
+      await program.rpc.addResult(result, poolId,{
+        accounts: {
+          baseAccount: baseAccount.publicKey,
+        },
+      });
+      console.log("result added: ", result);
+      setDetailView(false);
+      setResult("");
+      await getGifList();
+    }catch (error){
+      console.log("Error add in result: ", error);
+    }
+  }
+
   const handleClose = () => setShow(false);
   const handleShow = () => setShow(true);
   // const schema = yup.object().shape({
@@ -397,6 +421,7 @@ const App = () => {
                             )   
                             }
                         </ul>
+                        <p>Result: {clickedIndex.result}</p>
                       </Col>
                     </Row>
                     <Row>
@@ -409,11 +434,12 @@ const App = () => {
                     </Row>
                   </Card.Body>
                 </Card>
-                <Card>
+                <Card >
                   <Card.Body>
                     <Form>
+                    <fieldset disabled={!clickedIndex.closed}>
                       <Form.Group>
-                        <Form.Select onChnage={(event) => setResult(event.target.value)}>
+                        <Form.Select onChange={(event) => setResult(event.target.value)}>
                           {/* // TODO: make this only appear to pool owner after it has closed.   */}
                           <option>Please Pick one</option>
                           {clickedIndex.winOptions.map((item,index) =>
@@ -422,8 +448,9 @@ const App = () => {
                         </Form.Select>
                       </Form.Group>
                       <Form.Group>
-                        <Button>Add Result</Button>
+                        <Button onClick={addResultFunc}>Add Result</Button>
                       </Form.Group>
+                      </fieldset>
                     </Form>
                   </Card.Body>
                 </Card>
@@ -435,6 +462,7 @@ const App = () => {
                   </Card.Header>
                   <Card.Body>
                     <Form>
+                    <fieldset disabled={clickedIndex.closed}>
                       <Form.Group>
                         <Form.Label>Your Selection:</Form.Label>
                         <Form.Select onChange={(event) => setSelectedWinner(event.target.value)}>
@@ -453,6 +481,7 @@ const App = () => {
                       <Button variant="primary" onClick={placeBet}>
                         Submit
                       </Button>
+                      </fieldset>
                     </Form>
                   </Card.Body>
                 </Card>
