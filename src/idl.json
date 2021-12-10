@@ -30,6 +30,11 @@
           "name": "baseAccount",
           "isMut": true,
           "isSigner": false
+        },
+        {
+          "name": "user",
+          "isMut": false,
+          "isSigner": true
         }
       ],
       "args": [
@@ -70,6 +75,11 @@
           "name": "baseAccount",
           "isMut": true,
           "isSigner": false
+        },
+        {
+          "name": "user",
+          "isMut": false,
+          "isSigner": true
         }
       ],
       "args": [
@@ -90,6 +100,16 @@
           "name": "baseAccount",
           "isMut": true,
           "isSigner": false
+        },
+        {
+          "name": "player",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
         }
       ],
       "args": [
@@ -104,10 +124,133 @@
         {
           "name": "stakeBal",
           "type": "u32"
+        }
+      ]
+    },
+    {
+      "name": "identifyWinner",
+      "accounts": [
+        {
+          "name": "baseAccount",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          "name": "user",
-          "type": "string"
+          "name": "player",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "poolId",
+          "type": "u32"
+        }
+      ]
+    },
+    {
+      "name": "payWinnerLamps",
+      "accounts": [
+        {
+          "name": "baseAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "winner",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "owner",
+          "isMut": false,
+          "isSigner": true
+        }
+      ],
+      "args": [
+        {
+          "name": "stake",
+          "type": "u64"
+        },
+        {
+          "name": "poolId",
+          "type": "u32"
+        },
+        {
+          "name": "entryId",
+          "type": "u32"
+        }
+      ]
+    },
+    {
+      "name": "payOwnerLamps",
+      "accounts": [
+        {
+          "name": "baseAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "winner",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "owner",
+          "isMut": false,
+          "isSigner": true
+        }
+      ],
+      "args": [
+        {
+          "name": "poolId",
+          "type": "u32"
+        }
+      ]
+    },
+    {
+      "name": "payPlatformLamps",
+      "accounts": [
+        {
+          "name": "baseAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "winner",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "owner",
+          "isMut": false,
+          "isSigner": true
+        }
+      ],
+      "args": [
+        {
+          "name": "poolId",
+          "type": "u32"
         }
       ]
     }
@@ -131,6 +274,13 @@
             }
           }
         ]
+      }
+    },
+    {
+      "name": "WinnerAccount",
+      "type": {
+        "kind": "struct",
+        "fields": []
       }
     }
   ],
@@ -158,6 +308,10 @@
           },
           {
             "name": "poolBalance",
+            "type": "u64"
+          },
+          {
+            "name": "poolBalanceAfterFees",
             "type": "u64"
           },
           {
@@ -197,6 +351,46 @@
                 "defined": "EntryStruct"
               }
             }
+          },
+          {
+            "name": "winners",
+            "type": {
+              "vec": {
+                "defined": "WinnerStruct"
+              }
+            }
+          },
+          {
+            "name": "winStake",
+            "type": "u64"
+          },
+          {
+            "name": "paid",
+            "type": "bool"
+          }
+        ]
+      }
+    },
+    {
+      "name": "WinnerStruct",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "id",
+            "type": "u32"
+          },
+          {
+            "name": "user",
+            "type": "string"
+          },
+          {
+            "name": "stakeBal",
+            "type": "u64"
+          },
+          {
+            "name": "paid",
+            "type": "bool"
           }
         ]
       }
@@ -216,7 +410,7 @@
           },
           {
             "name": "stakeBal",
-            "type": "u32"
+            "type": "u64"
           }
         ]
       }

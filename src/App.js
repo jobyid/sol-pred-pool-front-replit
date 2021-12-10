@@ -126,9 +126,10 @@ const App = () => {
     }catch (error){
       console.log("error creating BaseAccount account: ", error)
     }
-  }
+  };
 
   const sendGif = async () => {
+    console.log("Add pool clicked")
     if (inputValue.legnth === 0) {
       console.log('No img link given');
       return;
@@ -280,7 +281,7 @@ const App = () => {
           </Modal.Body>
           <Modal.Footer>
           <button className="cta-button connect-wallet-button" onClick={handleClose}> Close </button>
-          <button className="cta-button connect-wallet-button" onClick={sendGif}>Add Pool </button>
+          <Button onClick={sendGif}>Add Pool </Button>
           </Modal.Footer>
         </Modal>
       </>
