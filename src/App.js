@@ -264,6 +264,7 @@ const App = () => {
     }
     
   }
+
   const payOwnerFees = async() =>{
     console.log("Pay the pool owners fees ")
     console.log("Owners wallet is: ", ownerWallet)
@@ -296,8 +297,11 @@ const App = () => {
     
       console.log(element.user)
       let user = element.user;
+      console.log("User is: ", user.toString());
       let eId = element.id;
-      let stakeBal = element.stakBal;
+      console.log("User id: ", eId);
+      let stakeBal = element.stakeBal;
+      console.log("Stake balance: ",stakeBal.toNumber())
       try{
         const provider = getProvider(); 
         const program = new Program(idl,programID, provider);
@@ -309,7 +313,7 @@ const App = () => {
             owner: provider.wallet.publicKey
           }
         })
-        console.log(element.user, " Paid")
+        console.log(element.user.toString(), " Paid")
       }catch(error){
         console.log(error)
       }
@@ -416,6 +420,7 @@ const App = () => {
       </>
     );
   }
+
   const topNavbar = () =>{
     return (
       <Navbar bg="dark" variant="dark" >
@@ -425,6 +430,11 @@ const App = () => {
                width="30" height="30" className="d-inline-block align-top"/>{" "}
               Sol Prediction Pools 
             </Navbar.Brand>
+            <Nav>
+              <Nav.Link>How it works</Nav.Link>
+              <Nav.Link>About</Nav.Link>
+              <Nav.Link>FAQ</Nav.Link>
+            </Nav>
             {renderModal()}
             <Nav className="justify-content-end">
               <Badge bg="info">Bal: tba</Badge>
@@ -433,6 +443,7 @@ const App = () => {
         </Navbar>
     )
   }
+
   const renderNotConnectedContainer = () => (
     <div className="header-container">
           
