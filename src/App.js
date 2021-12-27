@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import twitterLogo from './assets/twitter-logo.svg';
+
 import './App.css';
 import {Connection, PublicKey, clusterApiUrl} from '@solana/web3.js';
 import { Program, Provider, web3} from '@project-serum/anchor';
@@ -19,15 +19,18 @@ import Nav from 'react-bootstrap/Nav';
 import Card from 'react-bootstrap/Card';
 import Image from 'react-bootstrap/Image';
 import Button from 'react-bootstrap/Button';
+import { CardGroup } from 'react-bootstrap';
+import catergories from "./catergories.json"
 //import { Formik } from 'formik';
 
 
-const {SystemProgram, Keypair} = web3;
+const {SystemProgram, Keypair, LAMPORTS_PER_SOL} = web3;
 //making the key pair or resuing the one already collected 
 const arr = Object.values(kp._keypair.secretKey)
 const secret = new Uint8Array(arr)
-
-const baseAccount = web3.Keypair.fromSecretKey(secret)
+console.log(secret)
+let baseAccount = web3.Keypair.fromSecretKey(secret)
+console.log(baseAccount.publicKey.toString())
 
 const programID = new PublicKey(idl.metadata.address);
 const network = clusterApiUrl('devnet');
@@ -36,9 +39,7 @@ const opts = {
   preflightCommitment: "processed"
 }
 
-// Constants
-const TWITTER_HANDLE = '_buildspace';
-const TWITTER_LINK = `https://twitter.com/${TWITTER_HANDLE}`;
+
 
 const App = () => {
 
@@ -59,6 +60,9 @@ const App = () => {
   const [selectedWinner, setSelectedWinner] = useState(null);
   const [stake, setStake] = useState(0);
   const [result, setResult] = useState("");
+  const [catergory, setCatergory] = useState("None");
+  const [subCatergory, setSubCatergory] = useState("None");
+  const [ownerWallet,setOwnerWallet] = useState("");
   
 
   const checkIfWalletIsConnected = async () => {
@@ -108,6 +112,12 @@ const App = () => {
   }
 
   const createGifAccount = async () => {
+    const fs = require('fs')
+    console.log("Create Gif Account")
+    //baseAccount = web3.Keypair.generate()
+    //fs.writeFileSync('./baseAccount.json', JSON.stringify(baseAccount.publicKey))
+    console.log(baseAccount.publicKey.toString())
+    console.log("Base account is: ", baseAccount.publicKey.toString())
     try {
       const provider = getProvider();
       const program = new Program(idl, programID, provider);
@@ -130,6 +140,7 @@ const App = () => {
 
   const sendGif = async () => {
     console.log("Add pool clicked")
+    console.log("Owners fee is: ", ownerFee)
     if (inputValue.legnth === 0) {
       console.log('No img link given');
       return;
@@ -143,6 +154,7 @@ const App = () => {
       await program.rpc.addGif(inputValue, poolQuestion,pooldesc, winOptions, closeDateTime, verifySite, ownerFee,{
         accounts: {
           baseAccount: baseAccount.publicKey,
+          user: provider.wallet.publicKey
         },
       });
       console.log("Gif sucesfully sent to program", inputValue)
@@ -155,9 +167,10 @@ const App = () => {
   };
 
   const placeBet = async() => {
-    // TODO: transfer sol in the amount they have bet from the wallet. 
+     
     console.log("Placing bet...")
     if (new Date(clickedIndex.closeDateTime * 1000) < Date.now()){
+      alert("Pool closed");
       console.log("Pool Closed")
       return;
     }
@@ -168,9 +181,11 @@ const App = () => {
       const poolId = clickedIndex.poolId;
       //const transaction = new web3.Transaction();
       
-      await program.rpc.placeBet(selectedWinner,poolId,stake,walletAddress, {
+      await program.rpc.placeBet(selectedWinner,poolId,stake * LAMPORTS_PER_SOL, {
         accounts: {
           baseAccount: baseAccount.publicKey,
+          player: provider.wallet.publicKey,
+          systemProgram: SystemProgram.programId
         },
       });
       console.log("bet sent");
@@ -185,10 +200,11 @@ const App = () => {
   
   const addResultFunc = async() => {
     if (new Date(clickedIndex.closeDateTime * 1000) > Date.now()){
-      console.log("Pool must be Closed to add a result")
+      alert("Pool must be past the close time to add a result")
+      console.log("Pool must be past the close time to add a result")
       return;
     }
-    //TODO: check if the person add result it the pool owner 
+    
     try {
       const provider = getProvider();
       const program = new Program(idl, programID, provider);
@@ -196,6 +212,7 @@ const App = () => {
       await program.rpc.addResult(result, poolId,{
         accounts: {
           baseAccount: baseAccount.publicKey,
+          user: provider.wallet.publicKey,
         },
       });
       console.log("result added: ", result);
@@ -207,6 +224,101 @@ const App = () => {
     }
   }
 
+  const identifyWinners = async() => {
+    try {
+      const provider = getProvider(); 
+      const program = new Program(idl,programID, provider);
+      const poolId = clickedIndex.poolId;
+      await program.rpc.identifyWinner(poolId, {
+        accounts:{
+          baseAccount: baseAccount.publicKey,
+          player: provider.wallet.publicKey,
+          systemProgram: SystemProgram.programId
+        }
+      });
+      console.log("winners identified: ");
+      setDetailView(false);
+      setResult("");
+      await getGifList();
+    }catch (error) {
+      console.log("Error identifying winners", error)
+    }
+  }
+
+  const payPlatform = async() => {
+    console.log("Pay the platform")
+    const poolId = clickedIndex.poolId;
+    try{
+      const provider = getProvider();
+      const program = new Program(idl, programID, provider);
+      await program.rpc.payPlatformLamps(poolId,{
+        accounts:{
+          baseAccount: baseAccount.publicKey,
+          winner: catergories.platWall, // wallet to pay fees too
+          systemProgram: SystemProgram.programId, 
+          owner: provider.wallet.publicKey
+        }
+      })
+    }catch(err){
+      console.error("Failed to pay platform fees ", err)
+    }
+    
+  }
+  const payOwnerFees = async() =>{
+    console.log("Pay the pool owners fees ")
+    console.log("Owners wallet is: ", ownerWallet)
+    const poolId = clickedIndex.poolId;
+    try{
+      const provider = getProvider();
+      const program = new Program(idl, programID, provider);
+      await program.rpc.payOwnerLamps(poolId,{
+        accounts:{
+          baseAccount: baseAccount.publicKey,
+          winner: ownerWallet, // wallet to pay fees too
+          systemProgram: SystemProgram.programId, 
+          owner: provider.wallet.publicKey
+        }
+      })
+    }catch(err){
+      console.error("Failed to pay owner fees ", err)
+    }
+    await payPlatform()
+    console.log("Paid owner fees and platform fees")
+  }
+
+  const payWinners = async() =>{
+    console.log("Pay the winners")
+    const poolId = clickedIndex.poolId;
+    
+    const winnerList = clickedIndex.winners;
+    console.log(winnerList)
+    for (const element of winnerList){
+    
+      console.log(element.user)
+      let user = element.user;
+      let eId = element.id;
+      let stakeBal = element.stakBal;
+      try{
+        const provider = getProvider(); 
+        const program = new Program(idl,programID, provider);
+        await program.rpc.payWinnerLamps(stakeBal, poolId, eId ,{
+          accounts:{
+            baseAccount: baseAccount.publicKey,
+            winner: user,
+            systemProgram: SystemProgram.programId, 
+            owner: provider.wallet.publicKey
+          }
+        })
+        console.log(element.user, " Paid")
+      }catch(error){
+        console.log(error)
+      }
+    }
+    setDetailView(false);
+    await getGifList();
+  }
+
+  
   const handleClose = () => setShow(false);
   const handleShow = () => setShow(true);
   // const schema = yup.object().shape({
@@ -260,7 +372,8 @@ const App = () => {
               </Row>
               <Form.Group>
                 <Form.Label>Owner Fee:</Form.Label>
-                <Form.Select onSelect={(event) => setOwnerFee(event.target.value)}>
+                <Form.Select value={ownerFee} onChange={e => {console.log("e.target.value", e.target.value); setOwnerFee(e.target.value);}}>
+                {/* onSelectCapture={(event) => setOwnerFee(event.target.value)}> */}
                   <option>Select an option</option>
                   <option value='0'>0</option>
                   <option value="1">1</option>
@@ -275,6 +388,22 @@ const App = () => {
                   <option value="10">10</option>
                 </Form.Select>
                 <Form.Text>The fee you will earn from this pool as a %, max value is 10%</Form.Text>
+              </Form.Group>
+              <Form.Group>
+                <Form.Label>Catergory</Form.Label>
+                <Form.Select value={catergory} onChange={e=>{setCatergory(e.target.value)}}>
+                  {catergories.cats.map((item,i) => (
+                    <option value={item}>{item}</option>
+                  ))}
+                </Form.Select>
+              </Form.Group>
+              <Form.Group>
+                <Form.Label>Sub Catergory</Form.Label>
+                <Form.Select value={subCatergory} onChange={e=>{setSubCatergory(e.target.value)}}>
+                  {catergories.subCats.map((item,i) => (
+                    <option value={item}>{item}</option>
+                  ))}
+                </Form.Select>
               </Form.Group>
             </Form>
             
@@ -328,7 +457,7 @@ const App = () => {
     try {
       const provider = getProvider();
       const program = new Program(idl, programID, provider);
-      console.log(baseAccount.publicKey)
+      //console.log(baseAccount.publicKey)
       const account = await program.account.baseAccount.fetch(baseAccount.publicKey); // await program.provider.connection.getAccountInfo(baseAccount.publicKey); //
       console.log("Got the account", account)
       console.log("Pool list? ", account.poolList)
@@ -411,8 +540,9 @@ const App = () => {
                         <Image src={clickedIndex.imageLink} fluid rounded/>
                         <p>{clickedIndex.poolDescription}</p>
                       </Col>
-                      <Col>
-                        <p>Pool Balance: {clickedIndex.poolBalance.toNumber()}</p>
+                      <Col sm={6}>
+                        <p>Pool Balance: {clickedIndex.poolBalance.toNumber()/LAMPORTS_PER_SOL} SOL <small>(Before fees)</small></p>
+                        
                         <p>Close Date: {new Date(clickedIndex.closeDateTime * 1000).toUTCString()} </p>
                         <p>Verfication Site: {clickedIndex.verifyUrl}</p>
                         <p>Win Options:</p>
@@ -427,7 +557,7 @@ const App = () => {
                     </Row>
                     <Row>
                       <Col>
-                          <p>Platfrom Fee: 2%</p>
+                          <p>Platfrom Fee: 5%</p>
                       </Col>
                       <Col>
                           <p>Pool Owner Fee: {clickedIndex.ownerFee}%</p>
@@ -436,12 +566,16 @@ const App = () => {
                   </Card.Body>
                 </Card>
                 <Card >
+                <fieldset disabled={clickedIndex.userAddress.toString() != walletAddress} hidden={clickedIndex.userAddress.toString() != walletAddress}>
+                  <Row>
+                    <p>Only visable if you are the pool owner. ie. You created this pool</p>
+                    
+                  <CardGroup className="text-center">
+                  <Card>
                   <Card.Body>
                     <Form>
-                    <fieldset disabled={!clickedIndex.closed}>
                       <Form.Group>
                         <Form.Select onChange={(event) => setResult(event.target.value)}>
-                          {/* // TODO: make this only appear to pool owner after it has closed.   */}
                           <option>Please Pick one</option>
                           {clickedIndex.winOptions.map((item,index) =>
                             <option value={item}>{item}</option>
@@ -451,12 +585,67 @@ const App = () => {
                       <Form.Group>
                         <Button onClick={addResultFunc}>Add Result</Button>
                       </Form.Group>
-                      </fieldset>
+                      
                     </Form>
                   </Card.Body>
+                  </Card>
+                  
+                      <Card>
+                        <Card.Body>
+                          <Form>
+                            <Form.Group>
+                              <Button onClick={identifyWinners}>Identify Winners</Button>
+                            </Form.Group>
+                          </Form>
+                        </Card.Body>
+                      </Card>
+                  
+                      <Card>
+                        <Card.Body>
+                          <Form>
+                            <Form.Group>
+                              <Button onClick={payWinners}>Pay Winners</Button>
+                            </Form.Group>
+                          </Form>
+                        </Card.Body>
+                      </Card>
+                  </CardGroup>
+                  </Row>
+                  <Row>
+                    <CardGroup className='text-center'>
+                    <Card>
+                        <Card.Body>
+                          <Form>
+                            <Form.Group>
+                              <Form.Label>Wallet Address</Form.Label>
+                              <Form.Control type="text" value={ownerWallet} onChange={e => {setOwnerWallet(e.target.value)}}></Form.Control>
+                            </Form.Group>
+                            <Form.Group>
+                              <Button onClick={payOwnerFees}>Payout Fees</Button>
+                            </Form.Group>
+                          </Form>
+                        </Card.Body>
+                      </Card>
+                      {/* <Card>
+                        <Card.Body>
+                          <Form>
+                          <Form.Group>
+                              <Form.Label>Wallet Address</Form.Label>
+                              <Form.Control type="text"></Form.Control>
+                            </Form.Group>
+                            <Form.Group>
+                              <Button onClick={payPlatform}>Pay Platform</Button>
+                            </Form.Group>
+                          </Form>
+                        </Card.Body>
+                      </Card> */}
+                    </CardGroup>
+                  </Row>
+                  </fieldset>
                 </Card>
               </Col>
-              <Col>
+              <Col sm={4}>
+              
                 <Card>
                   <Card.Header>
                     <h2>Make a prediction.</h2>
@@ -486,6 +675,20 @@ const App = () => {
                     </Form>
                   </Card.Body>
                 </Card>
+                <fieldset hidden={!clickedIndex.closed}>
+                <Card>
+                  <Card.Header>
+                    <h3>Winners</h3>
+                  </Card.Header>
+                  <Card.Body>
+                    <ul>
+                    {clickedIndex.winners.map((item,index) =>
+                        <li>{item.user.toString()}</li>
+                      )}
+                    </ul>
+                  </Card.Body>
+                </Card>
+                </fieldset>
               </Col>
             </Row>
             
@@ -513,22 +716,15 @@ const App = () => {
 
   return (
     <div className="App">
+      
       <div className={walletAddress ? "authed-container":"container"}>
         
           {!walletAddress && renderNotConnectedContainer()}
           {walletAddress && renderConnectedContainer()}
-          
-        {/* </div> */}
-        {/* <div className="footer-container">
-          <img alt="Twitter Logo" className="twitter-logo" src={twitterLogo} />
-          <a
-            className="footer-text"
-            href={TWITTER_LINK}
-            target="_blank"
-            rel="noreferrer"
-          >{`built on @${TWITTER_HANDLE}`}</a>
-        </div> */}
       </div>
+      
+      
+      {/* </div> */}
     </div>
   );
 };

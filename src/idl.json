@@ -382,7 +382,7 @@
           },
           {
             "name": "user",
-            "type": "string"
+            "type": "publicKey"
           },
           {
             "name": "stakeBal",
@@ -402,7 +402,7 @@
         "fields": [
           {
             "name": "user",
-            "type": "string"
+            "type": "publicKey"
           },
           {
             "name": "prediction",
