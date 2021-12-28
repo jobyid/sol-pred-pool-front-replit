@@ -1,8 +1,15 @@
 .App {
-  height: 100vh;
+  /* height: 100vh; */
   background-color: #1a202c;
-  overflow: scroll;
+  /* overflow: scroll; */
   text-align: center;
+}
+.Foot {
+  /* height: 100vh; */
+  background-color: #1a202c;
+  /* overflow: scroll; */
+  text-align: center;
+  color: white;
 }
 
 .container {

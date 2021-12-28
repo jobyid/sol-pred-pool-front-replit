@@ -65,6 +65,14 @@
         {
           "name": "fee",
           "type": "u8"
+        },
+        {
+          "name": "cat",
+          "type": "string"
+        },
+        {
+          "name": "subCat",
+          "type": "string"
         }
       ]
     },
@@ -163,7 +171,7 @@
         },
         {
           "name": "winner",
-          "isMut": false,
+          "isMut": true,
           "isSigner": false
         },
         {
@@ -202,7 +210,7 @@
         },
         {
           "name": "winner",
-          "isMut": false,
+          "isMut": true,
           "isSigner": false
         },
         {
@@ -233,7 +241,7 @@
         },
         {
           "name": "winner",
-          "isMut": false,
+          "isMut": true,
           "isSigner": false
         },
         {
@@ -367,6 +375,14 @@
           {
             "name": "paid",
             "type": "bool"
+          },
+          {
+            "name": "catergory",
+            "type": "string"
+          },
+          {
+            "name": "subCat",
+            "type": "string"
           }
         ]
       }

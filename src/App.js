@@ -151,7 +151,7 @@ const App = () => {
       const program = new Program(idl, programID, provider);
       const closeDateTime = new Date(closeDate).getTime() / 1000;
       console.log(closeDateTime)
-      await program.rpc.addGif(inputValue, poolQuestion,pooldesc, winOptions, closeDateTime, verifySite, ownerFee,{
+      await program.rpc.addGif(inputValue, poolQuestion,pooldesc, winOptions, closeDateTime, verifySite, ownerFee, catergory, subCatergory,{
         accounts: {
           baseAccount: baseAccount.publicKey,
           user: provider.wallet.publicKey
@@ -581,7 +581,7 @@ const App = () => {
                   <Row>
                     <p>Only visable if you are the pool owner. ie. You created this pool</p>
                     
-                  <CardGroup className="text-center">
+                  <CardGroup className="text-center" hidden={clickedIndex.paid}>
                   <Card>
                   <Card.Body>
                     <Form>
@@ -626,9 +626,10 @@ const App = () => {
                     <CardGroup className='text-center'>
                     <Card>
                         <Card.Body>
+                          
                           <Form>
                             <Form.Group>
-                              <Form.Label>Wallet Address</Form.Label>
+                              <Form.Label>Pay owner fees, enter Wallet Address</Form.Label>
                               <Form.Control type="text" value={ownerWallet} onChange={e => {setOwnerWallet(e.target.value)}}></Form.Control>
                             </Form.Group>
                             <Form.Group>
